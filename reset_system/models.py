@@ -1,9 +1,38 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+class Department(models.Model):
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    department = models.ForeignKey(
+        Department,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,  # Only allow blank for deputy directors/CTO
+        help_text="Required for regular staff"
+    )
+    is_deputy_director = models.BooleanField(default=False)
+    is_cto = models.BooleanField(default=False)  # Add this new field
+
+    def __str__(self):
+        return f"{self.user.get_full_name()} ({self.department.name if self.department else 'Admin'})"
+
 class PasswordResetRequest(models.Model):
     SYSTEM_CHOICES = [
         ('windows', 'Windows System'),('efinancials', 'Efinancials')
+    ]
+
+    RESET_REASONS = [
+        ('forgot_password', 'Forgot Password'),
+        ('locked_account', 'Locked Account'),
+        ('expired_password', 'Expired Password'),
+        ('security_issue', 'Security Issue'),
+        ('other', 'Other'),
     ]
 
     STATUS_CHOICES = [
@@ -16,7 +45,14 @@ class PasswordResetRequest(models.Model):
 
     requestor = models.ForeignKey(User, on_delete=models.CASCADE)
     system = models.CharField(max_length=50, choices=SYSTEM_CHOICES)
-    reason = models.TextField(blank=True, null=True)
+    reason = models.CharField(
+        max_length=50,
+        choices=RESET_REASONS,
+        blank=False,  # 👈 required field
+        null=False
+    )
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)
+    approver = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='approvals')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

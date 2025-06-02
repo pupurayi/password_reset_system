@@ -16,9 +16,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path , include
+from reset_system import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('reset/', include('reset_system.urls')),
-
+    path('my-requests/', views.user_request_status, name='user_request_status'),
 ]
