@@ -7,7 +7,7 @@ class DepartmentAdmin(admin.ModelAdmin):
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'department', 'is_deputy_director')
+    list_display = ('user', 'department', 'is_deputy_director', 'is_ict_head', 'is_ict_admin')
     list_filter = ('is_deputy_director', 'department')
     search_fields = ('user__username', 'user__email')
 

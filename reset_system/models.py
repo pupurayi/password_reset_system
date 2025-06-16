@@ -17,8 +17,9 @@ class UserProfile(models.Model):
         help_text="Required for regular staff"
     )
     is_deputy_director = models.BooleanField(default=False)
-    is_cto = models.BooleanField(default=False)  # Add this new field
-
+    is_ict_head = models.BooleanField(default=False)
+    is_ict_admin = models.BooleanField(default=False)
+    is_service_desk = models.BooleanField(default=False)
     def __str__(self):
         return f"{self.user.get_full_name()} ({self.department.name if self.department else 'Admin'})"
 
@@ -56,7 +57,7 @@ class PasswordResetRequest(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+    is_ict_head = models.BooleanField(default=False)
     deputy_director_comments = models.TextField(blank=True, null=True)
     cto_comments = models.TextField(blank=True, null=True)
     ict_personnel = models.ForeignKey(User, related_name='ict_actions', on_delete=models.SET_NULL, null=True,

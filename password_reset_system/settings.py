@@ -78,6 +78,11 @@ WSGI_APPLICATION = 'password_reset_system.wsgi.application'
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
+STATIC_URL = '/static/'
+
+# Optional (for development)
+STATICFILES_DIRS = [ BASE_DIR / "static" ]
+
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
@@ -97,6 +102,17 @@ DATABASES = {
         'PORT': '5432',
     }
 }
+
+# Email Configuration for Internal SMTP Server
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = '10.100.240.206'           # Internal SMTP server IP
+EMAIL_PORT = 25                         # Default non-secure SMTP port
+EMAIL_USE_TLS = False                   # No TLS if it's an internal server
+EMAIL_HOST_USER = ''                    # Not needed for internal server
+EMAIL_HOST_PASSWORD = ''                # Not needed for internal server
+
+# Default sender for emails sent using send_mail
+DEFAULT_FROM_EMAIL = 'ICT Support <password@rbz.co.zw>'
 
 
 # Password validation
