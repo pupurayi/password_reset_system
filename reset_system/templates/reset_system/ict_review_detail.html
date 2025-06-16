@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Review Password Reset Request{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <div class="card shadow p-4">
+    <h2 class="mb-3 text-primary">Review Request</h2>
+    <p><strong>Requestor:</strong> {{ request_obj.requestor.username }}</p>
+    <p><strong>System:</strong> {{ request_obj.get_system_display }}</p>
+    <p><strong>Reason:</strong> {{ request_obj.get_reason_display }}</p>
+    <p><strong>Deputy Director Comments:</strong> {{ request_obj.deputy_director_comments }}</p>
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group mb-3">
+        <label for="comments" class="form-label">ICT Head Comments:</label>
+        <textarea name="comments" class="form-control" required></textarea>
+      </div>
+      <button type="submit" name="action" value="approve" class="btn btn-success me-2">Approve</button>
+      <button type="submit" name="action" value="deny" class="btn btn-danger">Reject</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Finalise Password Reset</h2>
+  <p><strong>User:</strong> {{ request_obj.requestor.username }}</p>
+  <p><strong>System:</strong> {{ request_obj.system }}</p>
+  <p><strong>Reason:</strong> {{ request_obj.get_reason_display }}</p>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="new_password" class="form-label">New Password</label>
+      <input type="text" name="new_password" id="new_password" class="form-control" required>
+    </div>
+    <button type="submit" class="btn btn-success">Submit & Notify User</button>
+    <a href="{% url 'ict_admin_dashboard' %}" class="btn btn-secondary">Cancel</a>
+  </form>
+</div>
+{% endblock %}

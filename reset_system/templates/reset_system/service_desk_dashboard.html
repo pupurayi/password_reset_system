@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+  <h2>All Password Reset Requests</h2>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>System</th>
+        <th>Reason</th>
+        <th>Status</th>
+        <th>Department</th>
+        <th>Submitted</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for req in requests %}
+      <tr>
+        <td>{{ req.requestor.username }}</td>
+        <td>{{ req.get_system_display }}</td>
+        <td>{{ req.get_reason_display }}</td>
+        <td>{{ req.get_status_display }}</td>
+        <td>{{ req.department.name }}</td>
+        <td>{{ req.created_at|date:"Y-m-d H:i" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

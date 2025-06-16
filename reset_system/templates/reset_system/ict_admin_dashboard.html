@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2>ICT Admin Dashboard</h2>
+  <table class="table table-bordered mt-3">
+    <thead>
+      <tr>
+        <th>Requestor</th>
+        <th>System</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for req in requests %}
+      <tr>
+        <td>{{ req.requestor.username }}</td>
+        <td>{{ req.system }}</td>
+        <td>{{ req.status }}</td>
+        <td><a href="{% url 'finalise_request' req.id %}" class="btn btn-primary">Finalise</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4">No approved requests.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
