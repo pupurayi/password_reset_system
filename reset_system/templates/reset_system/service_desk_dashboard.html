@@ -1,30 +1,82 @@
 {% extends 'base.html' %}
+{% block title %}All Password Reset Requests{% endblock %}
+{% load static %}
+
 {% block content %}
-<div class="container mt-5">
-  <h2>All Password Reset Requests</h2>
-  <table class="table table-striped">
-    <thead>
-      <tr>
-        <th>User</th>
-        <th>System</th>
-        <th>Reason</th>
-        <th>Status</th>
-        <th>Department</th>
-        <th>Submitted</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for req in requests %}
-      <tr>
-        <td>{{ req.requestor.username }}</td>
-        <td>{{ req.get_system_display }}</td>
-        <td>{{ req.get_reason_display }}</td>
-        <td>{{ req.get_status_display }}</td>
-        <td>{{ req.department.name }}</td>
-        <td>{{ req.created_at|date:"Y-m-d H:i" }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="container mt-4">
+  <h2 class="mb-4">📚 All Password Reset Requests</h2>
+
+  <!-- 🔍 Search Bar -->
+  <form method="get" class="mb-3 d-flex justify-content-between">
+    <input type="text" name="search" value="{{ request.GET.search }}" class="form-control me-2" placeholder="Search by username or system..." style="max-width: 400px;">
+    <div>
+      <a href="?format=csv" class="btn btn-outline-primary me-2">Export CSV</a>
+      <a href="?format=xlsx" class="btn btn-outline-success me-2">Export Excel</a>
+      <a href="?format=pdf" class="btn btn-outline-danger">Export PDF</a>
+    </div>
+  </form>
+
+  <!-- 📄 Requests Table -->
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle">
+      <thead class="table-primary">
+        <tr>
+          <th>User</th>
+          <th>System</th>
+          <th>Reason</th>
+          <th>Status</th>
+          <th>Stage</th>
+          <th>Submitted</th>
+          <th>Last Updated</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in requests %}
+        <tr>
+          <td>{{ req.requestor.username }}</td>
+          <td>{{ req.get_system_display }}</td>
+          <td>{{ req.get_reason_display }}</td>
+          <td><span class="badge bg-secondary">{{ req.get_status_display }}</span></td>
+          <td>
+            {% if req.status == 'pending' %}
+              Waiting for Department Head Approval ({{ req.approver.get_full_name|default:"Not Assigned" }})
+            {% elif req.status == 'recommended' %}
+              Waiting for ICT Head Approval
+            {% elif req.status == 'approved' %}
+              Waiting for ICT Admin Action
+            {% elif req.status == 'completed' %}
+              Completed
+            {% elif req.status == 'denied' %}
+              Denied
+            {% else %}
+              Unknown
+            {% endif %}
+          </td>
+          <td>{{ req.created_at|date:"Y-m-d H:i" }}</td>
+          <td>{{ req.updated_at|date:"Y-m-d H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center">No requests found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 📄 Pagination -->
+  <nav>
+    <ul class="pagination justify-content-center">
+      {% if requests.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ requests.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Previous</a>
+      </li>
+      {% endif %}
+      <li class="page-item active"><span class="page-link">Page {{ requests.number }} of {{ requests.paginator.num_pages }}</span></li>
+      {% if requests.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ requests.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Next</a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
 </div>
 {% endblock %}
