@@ -83,7 +83,7 @@
     <a href="{% url 'dashboard' %}">➕ New Request</a>
     <a href="{% url 'user_request_status' %}">📄 My Requests</a>
     {% if request.user.userprofile.is_service_desk %}
-    <a href="{% url 'service_desk_list' %}">📚 All Requests (Service Desk)</a>
+    <a href="{% url 'service_desk_dashboard' %}">📚 All Requests (Service Desk)</a>
     {% endif %}
   </div>
 
@@ -93,7 +93,7 @@
     <div class="row justify-content-center">
       <div class="col-md-12">
         {% block content %}
-        <!-- Page-specific content will be injected here -->
+        <!-- Page-specific con.tent will be injected here -->
         {% endblock %}
       </div>
     </div>

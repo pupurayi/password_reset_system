@@ -5,7 +5,6 @@ from django.utils.timezone import now
 from django.http import HttpResponse, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
-from django.contrib import messages
 from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib import messages
@@ -13,7 +12,12 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 import threading
 import socket
-
+from django.db.models import Q
+from django.core.paginator import Paginator
+import csv
+import openpyxl
+from io import BytesIO
+from reportlab.pdfgen import canvas
 
 def custom_login(request):
     if request.method == 'POST':
@@ -40,15 +44,6 @@ def custom_login(request):
 def custom_logout(request):
     logout(request)
     return redirect('custom_login')
-
-@login_required
-def service_desk_dashboard(request):
-    if not request.user.userprofile.is_service_desk:
-        return HttpResponseForbidden("Only Service Desk users can access this page.")
-
-    requests = PasswordResetRequest.objects.all().order_by('-created_at')
-    return render(request, 'reset_system/service_desk_dashboard.html', {'requests': requests})
-
 
 @login_required
 def dashboard(request):
@@ -90,6 +85,83 @@ def home_redirect(request):
         return redirect('ict_review_list')
     else:
         return HttpResponseForbidden("Role not recognized.")
+
+@login_required
+def service_desk_dashboard(request):
+    if not request.user.userprofile.is_service_desk:
+        return HttpResponseForbidden("Only Service Desk users can access this page.")
+
+    query = request.GET.get("search", "")
+    export_format = request.GET.get("format")
+
+    requests = PasswordResetRequest.objects.all()
+
+    if query:
+        requests = requests.filter(
+            Q(requestor__username__icontains=query) |
+            Q(system__icontains=query)
+        )
+
+    # 🔄 EXPORT SECTION
+    if export_format == "csv":
+        response = HttpResponse(content_type="text/csv")
+        response['Content-Disposition'] = 'attachment; filename="reset_requests.csv"'
+        writer = csv.writer(response)
+        writer.writerow(["User", "System", "Reason", "Status", "Submitted", "Updated"])
+        for req in requests:
+            writer.writerow([
+                req.requestor.username,
+                req.get_system_display(),
+                req.get_reason_display(),
+                req.status,
+                req.created_at.strftime("%Y-%m-%d %H:%M"),
+                req.updated_at.strftime("%Y-%m-%d %H:%M"),
+            ])
+        return response
+
+    elif export_format == "xlsx":
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Reset Requests"
+        ws.append(["User", "System", "Reason", "Status", "Submitted", "Updated"])
+        for req in requests:
+            ws.append([
+                req.requestor.username,
+                req.get_system_display(),
+                req.get_reason_display(),
+                req.status,
+                str(req.created_at.strftime("%Y-%m-%d %H:%M")),
+                str(req.updated_at.strftime("%Y-%m-%d %H:%M"))
+            ])
+        response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        response['Content-Disposition'] = 'attachment; filename="reset_requests.xlsx"'
+        wb.save(response)
+        return response
+
+    elif export_format == "pdf":
+        buffer = BytesIO()
+        p = canvas.Canvas(buffer)
+        y = 800
+        p.drawString(100, y, "Password Reset Requests")
+        y -= 20
+        for req in requests:
+            line = f"{req.requestor.username} | {req.get_system_display()} | {req.status} | {req.created_at.strftime('%Y-%m-%d')}"
+            p.drawString(100, y, line)
+            y -= 20
+            if y < 100:
+                p.showPage()
+                y = 800
+        p.showPage()
+        p.save()
+        buffer.seek(0)
+        return HttpResponse(buffer, content_type='application/pdf')
+
+    # 🗂️ PAGINATE AFTER EXPORT CHECK
+    paginator = Paginator(requests.order_by('-created_at'), 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'reset_system/service_desk_dashboard.html', {'requests': page_obj})
 
 @login_required
 def submit_reset_request(request):
