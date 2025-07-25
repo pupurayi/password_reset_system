@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404, render, redirect
-from .forms import PasswordResetForm
+from .forms import PasswordResetForm, WindowsADResetForm
 from .models import PasswordResetRequest, UserProfile
 from django.utils.timezone import now
 from django.http import HttpResponse, HttpResponseForbidden
@@ -395,35 +395,96 @@ def finalise_request(request, request_id):
     reset_request = get_object_or_404(PasswordResetRequest, id=request_id)
 
     if request.method == 'POST':
-        new_password = request.POST.get('new_password')
-        if not new_password:
-            messages.error(request, "Please enter a new password.")
-            return redirect('finalise_request', request_id=reset_request.id)
+        if reset_request.is_ad_account:
+            # Handle Windows AD reset case
+            reset_request.status = 'completed'
+            reset_request.ict_personnel = request.user
+            reset_request.completed_at = now()
+            reset_request.save()
 
-        # Update the request
-        reset_request.status = 'completed'
-        reset_request.ict_personnel = request.user
-        reset_request.completed_at = now()
-        reset_request.save()
+            # Send email to user (different message for AD reset)
+            send_mail(
+                subject="🔐 Your Windows AD password has been reset",
+                message=f"Hello {reset_request.requestor.username},\n\n"
+                       f"The Windows AD password reset for {reset_request.affected_name} has been completed.\n\n"
+                       f"Please contact the ICT department if you need any further assistance.",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[reset_request.requestor.email],
+            )
+        else:
+            # Handle standard password reset case
+            new_password = request.POST.get('new_password')
+            if not new_password:
+                messages.error(request, "Please enter a new password.")
+                return redirect('finalise_request', request_id=reset_request.id)
 
-        # Send email to user
-        send_mail(
-            subject="🔐 Your password has been reset",
-            message=f"Hello {reset_request.requestor.username},\n\nYour password for the {reset_request.system} system has been reset.\n\nYour new password is: {new_password}\n\nPlease log in and change it immediately.",
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[reset_request.requestor.email],
-        )
+            # Update the request
+            reset_request.status = 'completed'
+            reset_request.ict_personnel = request.user
+            reset_request.completed_at = now()
+            reset_request.save()
 
-        messages.success(request, "Password reset finalized and user notified.")
+            # Send email to user
+            send_mail(
+                subject="🔐 Your password has been reset",
+                message=f"Hello {reset_request.requestor.username},\n\n"
+                       f"Your password for the {reset_request.system} system has been reset.\n\n"
+                       f"Your new password is: {new_password}\n\n"
+                       f"Please log in and change it immediately.",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[reset_request.requestor.email],
+            )
+
+        messages.success(request, "Request marked as completed and user notified.")
         return redirect('ict_admin_dashboard')
 
     return render(request, 'reset_system/finalise_request.html', {
         'request_obj': reset_request
     })
 
-
 @login_required
 def ict_admin_review_list(request):
     requests = PasswordResetRequest.objects.filter(status='approved')
     return render(request, 'reset_system/ict_admin_review_list.html', {'requests': requests})
 
+
+@login_required
+def submit_ad_reset_request(request):
+    if request.method == 'POST':
+        form = WindowsADResetForm(request.POST)
+        if form.is_valid():
+            reset_request = form.save(commit=False)
+            reset_request.requestor = request.user
+            reset_request.is_ad_account = True
+            reset_request.system = 'windows'
+            reset_request.department = request.user.userprofile.department
+            reset_request.affected_director = form.cleaned_data['affected_director']
+            reset_request.save()
+
+            # ✅ Send email to selected director
+            director = reset_request.affected_director
+            if director and director.email:
+                subject = "🔐 AD Reset Approval Needed"
+                message = (
+                    f"Dear {director.get_full_name()},\n\n"
+                    f"A Windows AD reset request has been submitted on behalf of {reset_request.affected_name}.\n"
+                    f"- Department: {reset_request.affected_department}\n"
+                    f"- Extension: {reset_request.affected_extension}\n"
+                    f"- Reason: {reset_request.get_reason_display()}\n\n"
+                    "Please log into the Password Reset System to review and act on this request.\n\n"
+                    "Regards,\nRBZ Password Reset System"
+                )
+                send_mail(
+                    subject,
+                    message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [director.email],
+                    fail_silently=True
+                )
+
+            messages.success(request, "✅ Windows AD reset request submitted.")
+            return redirect('user_request_status')
+    else:
+        form = WindowsADResetForm()
+
+    return render(request, 'reset_system/submit_ad_reset.html', {'form': form})

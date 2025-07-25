@@ -34,3 +34,23 @@ class PasswordResetForm(forms.ModelForm):
             )
         else:
             self.fields['approver'].queryset = User.objects.none()
+
+
+class WindowsADResetForm(forms.ModelForm):
+    affected_director = forms.ModelChoiceField(
+        queryset=User.objects.filter(userprofile__is_deputy_director=True),
+        label="Departmental Director",
+        required=True
+    )
+
+    class Meta:
+        model = PasswordResetRequest
+        fields = ['affected_name', 'affected_department', 'affected_extension', 'reason', 'affected_director']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['reason'].initial = 'forgot_password'
+        self.fields['reason'].label = "Reason for Reset"
+        self.fields['affected_name'].label = "Full Name of Affected User"
+        self.fields['affected_extension'].label = "User's Extension"
+        self.fields['affected_department'].label = "User's Department"

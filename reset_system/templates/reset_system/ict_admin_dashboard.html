@@ -8,6 +8,8 @@
         <th>Requestor</th>
         <th>System</th>
         <th>Status</th>
+         <th>Submitted</th>
+          <th>Last Updated</th>
         <th>Action</th>
       </tr>
     </thead>
@@ -15,8 +17,16 @@
       {% for req in requests %}
       <tr>
         <td>{{ req.requestor.username }}</td>
-        <td>{{ req.system }}</td>
+         <td>
+            {% if req.is_ad_account %}
+              Windows AD Account - {{ req.affected_name }}
+            {% else %}
+              {{ req.get_system_display }}
+              {% endif %}
+          </td>
         <td>{{ req.status }}</td>
+         <td>{{ req.created_at|date:"Y-m-d H:i" }}</td>
+          <td>{{ req.updated_at|date:"Y-m-d H:i" }}</td>
         <td><a href="{% url 'finalise_request' req.id %}" class="btn btn-primary">Finalise</a></td>
       </tr>
       {% empty %}
