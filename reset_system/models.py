@@ -63,6 +63,18 @@ class PasswordResetRequest(models.Model):
     ict_personnel = models.ForeignKey(User, related_name='ict_actions', on_delete=models.SET_NULL, null=True,
                                       blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
-
+    is_ad_account = models.BooleanField(default=False)
+    affected_name = models.CharField(max_length=100, blank=True, null=True)
+    affected_department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True,
+                                            related_name='affected_dept')
+    affected_extension = models.CharField(max_length=10, blank=True, null=True)
+    affected_director = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='ad_requests_directed',
+        help_text="Deputy Director responsible for approving this AD reset request."
+    )
     def __str__(self):
         return f"{self.requestor.username} - {self.system} - {self.status}"

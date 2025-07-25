@@ -6,14 +6,37 @@
   <p><strong>System:</strong> {{ request_obj.system }}</p>
   <p><strong>Reason:</strong> {{ request_obj.get_reason_display }}</p>
 
-  <form method="post">
-    {% csrf_token %}
-    <div class="mb-3">
-      <label for="new_password" class="form-label">New Password</label>
-      <input type="text" name="new_password" id="new_password" class="form-control" required>
-    </div>
-    <button type="submit" class="btn btn-success">Submit & Notify User</button>
-    <a href="{% url 'ict_admin_dashboard' %}" class="btn btn-secondary">Cancel</a>
-  </form>
+  {% if request_obj.is_ad_account %}
+    <!-- Windows AD Reset Specific Fields -->
+    <p><strong>Affected Name:</strong> {{ request_obj.affected_name }}</p>
+    <p><strong>Affected Department:</strong> {{ request_obj.affected_department }}</p>
+    <p><strong>Extension:</strong> {{ request_obj.affected_extension }}</p>
+
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="is_ad_reset" value="true">
+      <div class="mb-3">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="reset_completed" id="reset_completed" required>
+          <label class="form-check-label" for="reset_completed">
+            I have called the extension {{ request_obj.affected_extension }} and completed the password reset
+          </label>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-success">Mark as Completed</button>
+      <a href="{% url 'ict_admin_dashboard' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+  {% else %}
+    <!-- Standard Password Reset Form -->
+    <form method="post">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label for="new_password" class="form-label">New Password</label>
+        <input type="text" name="new_password" id="new_password" class="form-control" required>
+      </div>
+      <button type="submit" class="btn btn-success">Submit & Notify User</button>
+      <a href="{% url 'ict_admin_dashboard' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+  {% endif %}
 </div>
 {% endblock %}

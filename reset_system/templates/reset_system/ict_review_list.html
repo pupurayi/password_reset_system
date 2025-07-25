@@ -16,7 +16,13 @@
       {% for req in requests %}
       <tr>
         <td>{{ req.requestor.username }}</td>
-        <td>{{ req.get_system_display }}</td>
+          <td>
+            {% if req.is_ad_account %}
+              Windows AD Account - {{ req.affected_name }}
+            {% else %}
+              {{ req.get_system_display }}
+              {% endif %}
+          </td>
         <td>{{ req.get_reason_display }}</td>
         <td>{{ req.created_at|date:"Y-m-d H:i" }}</td>
         <td>

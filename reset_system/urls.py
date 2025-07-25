@@ -17,4 +17,5 @@ urlpatterns = [
     path('ict/review/<int:request_id>/', views.ict_review_detail, name='ict_review_detail'),
     path('ict-admin/dashboard/', views.ict_admin_dashboard, name='ict_admin_dashboard'),
     path('ict-admin/finalise/<int:request_id>/', views.finalise_request, name='finalise_request'),
+    path('submit/ad-reset/', views.submit_ad_reset_request, name='submit_ad_reset'),
 ]
